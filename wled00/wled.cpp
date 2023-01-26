@@ -633,8 +633,14 @@ void WLED::initConnection()
 
   if (!WLED_WIFI_CONFIGURED) {
     DEBUG_PRINTLN(F("No connection configured."));
-    if (!apActive) initAP();        // instantly go to ap mode
-    return;
+    if (*clientSSID == '\0') {
+      DEBUG_PRINTLN(F("But user don't want connection, WIFI_OFF"));
+      WiFi.mode(WIFI_OFF);
+      return;
+    } else {
+      if (!apActive) initAP();        // instantly go to ap mode
+      return;
+    }
   } else if (!apActive) {
     if (apBehavior == AP_BEHAVIOR_ALWAYS) {
       DEBUG_PRINTLN(F("Access point ALWAYS enabled."));
@@ -801,12 +807,12 @@ void WLED::handleConnection()
       sendImprovStateResponse(0x03, true);
       improvActive = 2;
     }
-    if (now - lastReconnectAttempt > ((stac) ? 300000 : 18000) && WLED_WIFI_CONFIGURED) {
+    if (now - lastReconnectAttempt > ((stac) ? 300000 : 18000) && WLED_WIFI_CONFIGURED && *clientSSID != '\0') {
       if (improvActive == 2) improvActive = 3;
       DEBUG_PRINTLN(F("Last reconnect too old."));
       initConnection();
     }
-    if (!apActive && now - lastReconnectAttempt > 12000 && (!wasConnected || apBehavior == AP_BEHAVIOR_NO_CONN)) {
+    if (!apActive && now - lastReconnectAttempt > 12000 && apBehavior != AP_BEHAVIOR_BUTTON_ONLY && (!wasConnected || apBehavior == AP_BEHAVIOR_NO_CONN)) {
       DEBUG_PRINTLN(F("Not connected AP."));
       initAP();
     }
